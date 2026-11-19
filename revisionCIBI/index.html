@@ -123,7 +123,7 @@ table.sh td.act button{border:none;background:none;color:var(--bad);font-size:16
 .modal input[type=text]{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:inherit;font-size:15px;margin:6px 0 12px}
 .wsl{display:flex;flex-direction:column;gap:8px;margin:10px 0 16px}
 .wsl button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;font-size:14px}
-.wsl button:hover{border-color:var(--petro)}
+.wsl button:hover{border-color:var(--petro)}.wsr{display:flex;gap:6px}.wsr button:first-child{flex:1}.wsl .wsdel{flex:none;width:44px;text-align:center;color:#B3410E}
 .grades{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .grades label{border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;font-size:13px;cursor:pointer;user-select:none}
 .grades label.on{background:var(--petro);border-color:var(--petro);color:#fff}
@@ -307,7 +307,7 @@ var INST=[
  {t:"Índice de Unoi por grado",u:""},
  {t:"Syllabus 2026 del área",u:""}
 ];
-var PFX='cabCurriculo:';
+var PFX='cabRevisionCIBI:';
 var REVIEW=true;
 var RVD=[
  {id:'d1',t:'Dos niveles de objetivos',d:'El objetivo general del área se redacta como meta abarcadora («Comprenderemos que…») y los objetivos de cada grado son sus hilos conductores. No se escriben ejes formativos ni objetivos de grado aparte.',v:'guia'},
@@ -319,13 +319,13 @@ var RVD=[
  {id:'d7',t:'Formato: portal único o Microsoft Forms',d:'Lo acordado en la reunión es preparar las preguntas para Microsoft Forms. La propuesta es reunir en este portal las preguntas, los documentos de referencia, los ejemplos y las tablas por grado. Marquen «Aprobado» para usar el portal, «Eliminar» para trabajar solo con Forms (las preguntas son las mismas) o «Ajustar» para combinar ambos, y expliquen en la observación.',v:'inicio'}
 ];
 var S=null,wsKey=null,view='inicio',saveT=null;
-var store={get:function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},keys:function(){var r=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf(PFX)===0)r.push(k)}}catch(e){}return r}};
+var store={get:function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},keys:function(){var r=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf(PFX)===0&&k.indexOf(PFX+'_')!==0)r.push(k)}}catch(e){}return r}};
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function blank(name){var o={area:name,grades:[],answers:{},pend:{},sheets:{},checks:{},updated:new Date().toISOString()};D.sheets.forEach(function(s){o.sheets[s.id]=[]});return o}
 function save(){if(!S)return;S.updated=new Date().toISOString();var ok=store.set(wsKey,S);var el=document.getElementById('saved');el.textContent=ok?'✓ Guardado':'⚠ No se pudo guardar';clearTimeout(saveT);saveT=setTimeout(function(){el.textContent=''},1800);updNav()}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(function(){t.style.display='none'},2400)}
 /* workspaces */
-function openWs(){var l=document.getElementById('wsList'),ks=store.keys();l.innerHTML=ks.length?'':'<p class="note">Todavía no hay áreas en este navegador.</p>';ks.forEach(function(k){var o=store.get(k);if(!o)return;var b=document.createElement('button');b.innerHTML='<b>'+esc(o.area)+'</b><br><span class="note">Última edición: '+new Date(o.updated).toLocaleString('es-CO')+'</span>';b.onclick=function(){load(k)};l.appendChild(b)});document.getElementById('wsClose').style.display=S?'inline-block':'none';document.getElementById('wsModal').classList.add('on')}
+function openWs(){var l=document.getElementById('wsList'),ks=store.keys(),last=null;try{last=localStorage.getItem(PFX+'_last')}catch(e){}ks.sort(function(x,y){return (y===last)-(x===last)});l.innerHTML=ks.length?'<p class="note">Áreas guardadas en este navegador. Elija la suya o cree una nueva.</p>':'<p class="note">Todavía no hay áreas en este navegador.</p>';ks.forEach(function(k){var o=store.get(k);if(!o||!o.area)return;var r=document.createElement('div');r.className='wsr';var b=document.createElement('button');b.innerHTML='<b>'+esc(o.area)+'</b>'+(k===last?' <span class="note">· la última que se abrió aquí</span>':'')+'<br><span class="note">Última edición: '+new Date(o.updated).toLocaleString('es-CO')+'</span>';b.onclick=function(){load(k)};var x=document.createElement('button');x.className='wsdel';x.title='Quitar esta área de este navegador';x.textContent='🗑';x.onclick=function(){if(confirm('¿Quitar «'+o.area+'» de este navegador? Se borrará lo escrito aquí. Si tienen el archivo de avance, podrán volver a cargarlo.')){try{localStorage.removeItem(k);if(k===last)localStorage.removeItem(PFX+'_last')}catch(e){}if(k===wsKey){S=null;wsKey=null}openWs();updNav()}};r.appendChild(b);r.appendChild(x);l.appendChild(r)});document.getElementById('wsClose').style.display=S?'inline-block':'none';document.getElementById('wsModal').classList.add('on')}
 function closeWs(){document.getElementById('wsModal').classList.remove('on')}
 function createWs(){var n=document.getElementById('wsNew').value.trim();if(!n){toast('Escriba el nombre del área');return}var k=PFX+n.toLowerCase().replace(/\s+/g,'-');if(store.get(k)&&!confirmBox()){return}S=blank(n);wsKey=k;save();closeWs();go('inicio')}
 function confirmBox(){toast('Ya existe un espacio con ese nombre: se abrirá el existente');var o=store.get(PFX+document.getElementById('wsNew').value.trim().toLowerCase().replace(/\s+/g,'-'));if(o){S=o;wsKey=PFX+o.area.toLowerCase().replace(/\s+/g,'-');closeWs();go('inicio')}return false}
@@ -333,7 +333,8 @@ function load(k){S=store.get(k);wsKey=k;D.sheets.forEach(function(s){if(!S.sheet
 function importFile(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(!o.area||!o.answers)throw 1;S=o;wsKey=PFX+o.area.toLowerCase().replace(/\s+/g,'-');save();closeWs();go('inicio');toast('Avance de '+o.area+' cargado')}catch(e){toast('El archivo no es un avance válido')}};r.readAsText(f);inp.value=''}
 /* progress */
 function secProg(s){var n=0;s.qs.forEach(function(q){if((S.answers[q.id]||'').trim().length>10)n++});return [n,s.qs.length]}
-function totalProg(){var a=0,b=0;D.sections.forEach(function(s){var p=secProg(s);a+=p[0];b+=p[1]});var sh=0;D.sheets.forEach(function(s){if(S.sheets[s.id].length)sh++});return Math.round(100*(a/b*0.6+sh/D.sheets.length*0.4))}
+function realRows(s){return (S.sheets[s.id]||[]).filter(function(r){var own=0;for(var k in r){var v=String(r[k]||'').trim();if(!v||k==='grado'||k==='per'||k==='estado')continue;if(s.ex&&String(s.ex[k]||'').trim()===v)continue;own++}return own>0})}
+function totalProg(){var a=0,b=0;D.sections.forEach(function(s){var p=secProg(s);a+=p[0];b+=p[1]});var sh=0;D.sheets.forEach(function(s){if(realRows(s).length)sh++});return Math.round(100*(a/b*0.6+sh/D.sheets.length*0.4))}
 /* nav */
 function updNav(){var n=document.getElementById('nav'),h='';
  function it(id,ic,t,pr,full){return '<a class="'+(view===id?'on':'')+'" onclick="go(\''+id+'\')"><span class="ic">'+ic+'</span><span>'+t+'</span>'+(pr!=null?'<span class="pr'+(full?' full':'')+'">'+pr+'</span>':'')+'</a>'}
@@ -517,7 +518,7 @@ function bind(){
  var rn=document.getElementById('rvName');if(rn){rn.addEventListener('input',function(){RV.name=rn.value;rvSave()});document.getElementById('rvRole').addEventListener('change',function(e){RV.role=e.target.value;rvSave()});document.getElementById('rvGen').addEventListener('input',function(e){RV.general=e.target.value;rvSave()})}
  var g=document.getElementById('grades');if(g)[].forEach.call(g.querySelectorAll('input'),function(c){c.addEventListener('change',function(){var v=c.value,i=S.grades.indexOf(v);if(c.checked&&i<0)S.grades.push(v);if(!c.checked&&i>=0)S.grades.splice(i,1);S.grades.sort(function(a,b){return D.grades.indexOf(a)-D.grades.indexOf(b)});c.parentNode.className=c.checked?'on':'';save()})})}
 /* start */
-(function(){var last=null;try{last=localStorage.getItem(PFX+'_last')}catch(e){}if(last&&store.get(last)){S=store.get(last);wsKey=last;D.sheets.forEach(function(s){if(!S.sheets[s.id])S.sheets[s.id]=[]})}if(!S&&REVIEW){S=blank('Área de prueba (revisión)');wsKey=PFX+'area-de-prueba';store.set(wsKey,S)}updNav();go(REVIEW?'revdir':'inicio');if(!S)openWs()})();
+(function(){var last=null;try{last=localStorage.getItem(PFX+'_last')}catch(e){}if(REVIEW&&last&&store.get(last)){S=store.get(last);wsKey=last;D.sheets.forEach(function(s){if(!S.sheets[s.id])S.sheets[s.id]=[]})}if(!S&&REVIEW){S=blank('Área de prueba (revisión)');wsKey=PFX+'area-de-prueba';store.set(wsKey,S)}updNav();go(REVIEW?'revdir':'inicio');if(!S)openWs()})();
 var _save=save;save=function(){_save();try{if(wsKey)localStorage.setItem(PFX+'_last',wsKey)}catch(e){}};
 </script>
 </body>
